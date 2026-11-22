@@ -55,4 +55,17 @@ export const views = {
     accepted: isolation,
     inputs: ['输入清单', [source, ['sha256', 'SHA-256'], ['bytes', '字节', 'number']]],
   },
+  seats: {
+    shows: ['每场座位核对', [show, ['title', '演出'], venue, ['capacity', '新容量', 'number'],
+      ['active_count', '在场座位', 'number'], ['unpaid_released', '撤未付款', 'number'],
+      ['package_split', '拆套票', 'number'], ['due_cents', '待退票款 ¥', 'money'],
+      ['version', '座位版本', 'number'], ['snapshot_id', '缩座快照'], ['reason_code', '核对结果']]],
+    evictions: ['清退依据', [['snapshot_id', '缩座快照'], show, ['seat_label', '座位'], ['hold_id', '占位编号'],
+      ticket, ['eviction_type', '清退类型'], ['reason_code', '原因码'], ['evicted_at', '原占位时刻', 'time'],
+      ['source_line', '源行', 'number']]],
+    dues: ['待清退票款', [ticket, show, ['due_cents', '应退 ¥', 'money'], ['allocated_cents', '原分账 ¥', 'money'],
+      ['state', '状态'], ['snapshot_id', '缩座快照']]],
+    attempts: ['快照处理留痕', [['snapshot_id', '缩座快照'], ['status', '处理结果'], ['reason_code', '原因码'],
+      ['recorded_at', '记录时刻', 'time']]],
+  },
 };

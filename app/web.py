@@ -12,7 +12,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory=ROOT / 'app' / 'templates')
 MODULES = (
     ('intake', '票源导入'), ('rights', '套票权益'), ('scans', '入场核销'), ('allocation', '权重分账'),
-    ('refunds', '退款冲正'), ('reconcile', '场馆勾稽'), ('evidence', '结算凭证'),
+    ('refunds', '退款冲正'), ('reconcile', '场馆勾稽'), ('seats', '场馆缩座'), ('evidence', '结算凭证'),
 )
 
 

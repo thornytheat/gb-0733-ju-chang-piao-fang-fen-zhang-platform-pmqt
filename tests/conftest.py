@@ -22,7 +22,7 @@ def sample():
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(tmp_path / 'ledger.sqlite3')) as session:
+    with TestClient(create_app(tmp_path / 'ledger.sqlite3', tmp_path / 'seats.sqlite3')) as session:
         yield session
 
 

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/layout.css">
   <link rel="stylesheet" href="/static/components.css">
   <script src="/static/workbench.js" type="module"></script>
+  <script src="/static/seats.js" type="module"></script>
 </head>
 <body data-run="{{ manifest.run_id }}">
   <div class="app">
@@ -52,6 +53,7 @@
           {% endfor %}
         </div>
         {% include 'ledger.html' %}
+        {% include 'seats.html' %}
         {% include 'evidence.html' %}
       </main>
       <footer class="statusbar">

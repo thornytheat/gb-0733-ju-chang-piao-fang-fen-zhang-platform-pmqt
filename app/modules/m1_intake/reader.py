@@ -17,12 +17,12 @@ def decode(data, name):
     raise Problem(422, 'FILE_ENCODING', {'source': name})
 
 
-def read_source(data, name, stats, isolates):
+def read_source(data, name, stats, isolates, columns=None):
     text, encoding = decode(data, name)
     if not text:
         raise Problem(422, 'FILE_EMPTY', {'source': name})
     stats.update(encoding=encoding, status='HEADER_ONLY', rows=0, blank=0, headers=0)
-    columns = SOURCE_COLUMNS[name]
+    columns = columns or SOURCE_COLUMNS[name]
     reader = csv.reader(io.StringIO(text, newline=''), strict=True)
     header = None
     try:

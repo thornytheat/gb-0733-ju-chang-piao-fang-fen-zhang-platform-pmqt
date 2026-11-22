@@ -13,6 +13,7 @@
 | M5 退款冲正 | 逐笔核对停演冲正、限额与超领原因 | `GET /api/refunds/{run_id}` | `app/modules/m5_refunds/rules.py` `app/modules/m5_refunds/service.py` | `tests/test_refunds.py` |
 | M6 场馆勾稽 | 对照双账并按票、场馆、源文件复核 | `GET /api/reconcile/{run_id}` | `app/modules/m6_reconcile/ledger.py` `app/modules/m6_reconcile/service.py` | `tests/test_reconcile.py` |
 | M7 结算凭证 | 查看原因码分布与源清单，下载可重算凭证 | `GET /api/evidence/{run_id}`、`GET /api/evidence/{run_id}/export` | `app/modules/m7_evidence/bundle.py` `app/modules/m7_evidence/csv_out.py` | `tests/test_evidence.py` |
+| M8 场馆缩座 | 先撤未付款占位、再拆已收款套票，逐场核对座位与待清退票并下载占位凭证 | `POST /api/seats/{run_id}/holds`、`POST /api/seats/{run_id}/reductions`、`GET /api/seats/{run_id}`、`GET /api/seats/{run_id}/holds/{hold_id}/voucher` | `app/modules/m8_seats/seat_plan.py` `app/modules/m8_seats/store.py` | `tests/test_seat_plan.py` `tests/test_seat_records.py` `tests/test_seats.py` |
 
 ## 陷阱登记
 
@@ -34,6 +35,17 @@
 | TRAP-23 | scans.csv 含起点和关闭时刻 | 边界二次入账 | 半开核销窗 | `app/modules/m3_scans/service.py` | `tests/test_scans.py::test_window_start_is_inclusive_and_close_exclusive` |
 | TRAP-24 | tickets.csv 的 00107 拆给相同权重 | 三场取整后少分或多分 | 最大余数与场次键裁决 | `app/modules/m4_allocation/rules.py` | `tests/test_allocation.py::test_equal_remainders_use_stable_show_key_and_conserve` |
 | TRAP-26 | 以 refunds.csv 已发布样例为基准提交仅表头快照 | 原退款被旧表清除 | 校验已过账冲正都保留 | `app/modules/m5_refunds/service.py` | `tests/test_refunds.py::test_previous_approval_cannot_be_erased_by_stale_submission` |
+| TRAP-30 | 缩座回传重试重复落库 | 旧占位被二次清退、座位版本虚增 | 按快照 ID 去重，重试只返回原裁决不新增占用 | `app/modules/m8_seats/store.py` | `tests/test_seats.py::test_snapshot_retry_does_not_add_occupancy_or_duplicate_eviction` |
+| TRAP-31 | 缩座清退中途失败 | 部分座位被释放、新旧版本对不上 | 整笔事务回滚恢复旧版座位，失败尝试单独留痕 | `app/modules/m8_seats/store.py` | `tests/test_seats.py::test_failed_reduction_rolls_back_seats_but_keeps_attempt_record` |
+| TRAP-32 | 已收款套票无分账依据仍被拆 | 待退票款凭空产生、结算对不上 | 仅当票场存在正额已发布分账才可拆，否则整单判容量不足 | `app/modules/m8_seats/seat_plan.py` | `tests/test_seats.py::test_multi_show_snapshot_rolls_back_when_any_show_is_infeasible` |
+| TRAP-33 | 团体场回传晚于硬性入场时限 | 超时快照仍改动座位 | 时限后回传判 `GROUP_LOCK_DEADLINE_PASSED`，拒绝且座位不动 | `app/modules/m8_seats/store.py` | `tests/test_seats.py::test_group_lock_deadline_rejection_leaves_seats_untouched` |
+| TRAP-34 | 清退依据只写内存或随回滚丢失 | 后续无据可查、无法解释退款 | 清退、待退票款、尝试记录只追加落独立座位库 | `app/modules/m8_seats/schema.sql` | `tests/test_seats.py::test_eviction_and_refund_due_are_append_only_with_full_basis` |
+
+## 场馆缩座规则（M8）
+
+清退顺序固定为「先撤未付款占位，再拆已收款套票」。未付款占位（无票码关联）释放不产生退款；仍不足时才拆已收款套票在该场的座位，按已发布分账中该票场的 `allocated_cents` 登记待清退票款，套票其余场次权益不动、不换场。无正额分账依据的已收款座位不可拆，全部可清退占位移除后仍超容则整单失败，座位版本保持旧版。
+
+座位按场次版本化（`seat_versions`），每次成功缩座生成新版本并保存在场座位标签；占位状态翻转为 `released` 但历史行保留。缩座快照按 `snapshot_id` 幂等，重试返回既有裁决且不新增占用、版本或清退。失败尝试（团体锁超时、容量不足）单独提交留痕，不随业务回滚丢失。团体场填了 `group_lock_deadline` 时，`reported_at` 晚于该时刻即拒绝。预览使用 `preview-sample` 独立座位账册，与真实发布的同名分账账册隔离。权限与批量运营不在本模块范围。
 
 ## 对账规则
 

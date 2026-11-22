@@ -33,3 +33,14 @@
 - 场馆应收只计正常场次的有效核销。未结包括未核销、停演未退完及未分配票款。
 - 源行守恒按逻辑记录计，`逻辑行 = 采信 + 隔离 + 空行 + 表头`。相互冲突的每条原始记录只计一次。
 - ZIP 同时保留本次输入、原分账来源和结果 CSV。`manifest.json` 含入参、版本、运行编号、原发布编号、时间、耗时、逐文件 SHA-256、勾稽检查及汇总。JSON 和原始文件逐字保留票码，CSV 复核时请将票码列按文本导入。
+
+## 场馆缩座输入（M8）
+
+缩座使用两份独立 CSV，不进入五份分账源契约，沿用同样的解码、行数与 512 KiB 上限，解析问题进入缩座隔离视图而不写占用。
+
+| 文件 | 字段及定义 |
+|---|---|
+| `seat_holds.csv` | `hold_id` 占位编号，`show` 须为已采信场次，`seat_label` 同场内唯一座位标签，`ticket` 可空（空表示未付款占位）；填了票码则须已收款，`reservation_status` 取 `reserved`、`held`、`released`，`held_at` 为占位时刻 |
+| `seat_reduction.csv` | `snapshot_id` 缩座快照编号（同编号重试幂等），`show` 场次，`reported_at` 回传时刻，`new_capacity` 非负整数新容量，`group_lock_deadline` 可空；填写后回传晚于该时刻按团体场硬性时限拒绝 |
+
+清退顺序为先撤未付款占位（按占位时刻、编号升序），再拆已收款套票座位。拆票只在该票场存在正额已发布分账时允许，待退票款等于对应 `allocated_cents`，套票其他场次权益不变。全部可清退占位移除后仍超容，整单回退且不生成新版本；成功缩座按场次写入新版本座位，清退依据（`seat_evictions`）、待清退票款（`seat_refund_dues`）和快照尝试（`seat_snapshot_attempts`）只追加。单个占位凭证由 `GET /api/seats/{run_id}/holds/{hold_id}/voucher` 下载，含账册、关联运行和内容 SHA-256 指纹。

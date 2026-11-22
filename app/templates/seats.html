@@ -1,0 +1,20 @@
+<section class="panel seats" aria-labelledby="seats-title" id="seats-panel" data-run="{{ manifest.run_id }}">
+  <div class="panel__head evidence-head">
+    <div class="evidence-title"><h2 id="seats-title">场馆缩座</h2><span id="seats-module-name">每场座位与冲突票</span></div>
+    <span class="state" id="seats-balance"></span>
+  </div>
+  <div class="seats-scroll" tabindex="0" aria-label="每场座位核对">
+    <table class="ledger" aria-label="每场座位核对">
+      <thead><tr><th scope="col">场次 / 场馆</th><th scope="col" class="num">容量</th><th scope="col" class="num">在场</th>
+      <th scope="col" class="num">撤未付款</th><th scope="col" class="num">拆套票</th><th scope="col" class="num">待退票款</th>
+      <th scope="col" class="num">版本</th><th scope="col">占位凭证</th></tr></thead>
+      <tbody id="seats-rows"></tbody>
+    </table>
+  </div>
+  <form class="filters" id="voucher-form">
+    <label class="sr-only" for="voucher-hold">占位编号</label>
+    <input id="voucher-hold" name="hold_id" placeholder="输入占位编号下载凭证，如 H-B1" maxlength="64" required>
+    <button class="btn" type="submit">下载占位凭证</button>
+    <output id="voucher-message" aria-live="polite"></output>
+  </form>
+</section>
